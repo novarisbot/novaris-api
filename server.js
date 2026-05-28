@@ -1,66 +1,115 @@
-const express =
-require("express");
+const express = require("express");
+const fs = require("fs");
+const cors = require("cors");
 
-const fs =
-require("fs");
-
-const cors =
-require("cors");
-
-const app =
-express();
+const app = express();
 
 app.use(cors());
-
 app.use(express.json());
 
-/* announcement */
+const FILE = "./announcement.json";
 
-app.post(
-"/api/announcement",
-(req,res)=>{
+if(!fs.existsSync(FILE)){
+  fs.writeFileSync(FILE,"[]");
+}
 
-const data =
-req.body;
+app.get("/api/announcement",(req,res)=>{
 
-fs.writeFileSync(
-"./announcement.json",
-JSON.stringify(
-data,
-null,
-2
-)
-);
+  const data =
+  JSON.parse(
+    fs.readFileSync(FILE)
+  );
 
-res.json({
-success:true
-});
+  res.json(data);
 
 });
 
-/* get announcement */
+app.post("/api/announcement",(req,res)=>{
 
-app.get(
-"/api/announcement",
-(req,res)=>{
+  const data =
+  JSON.parse(
+    fs.readFileSync(FILE)
+  );
 
-const data =
-JSON.parse(
-fs.readFileSync(
-"./announcement.json"
-)
-);
+  const newAnnouncement = {
+    id: Date.now(),
+    ...req.body
+  };
 
-res.json(data);
+  data.push(newAnnouncement);
+
+  fs.writeFileSync(
+    FILE,
+    JSON.stringify(data,null,2)
+  );
+
+  res.json({
+    success:true
+  });
 
 });
 
-app.listen(
-3000,
-()=>{
+app.delete("/api/announcement/:id",(req,res)=>{
 
-console.log(
-"API aktif"
-);
+  const id =
+  Number(req.params.id);
 
+  let data =
+  JSON.parse(
+    fs.readFileSync(FILE)
+  );
+
+  data =
+  data.filter(
+    x => x.id !== id
+  );
+
+  fs.writeFileSync(
+    FILE,
+    JSON.stringify(data,null,2)
+  );
+
+  res.json({
+    success:true
+  });
+
+});
+
+app.put("/api/announcement/:id",(req,res)=>{
+
+  const id =
+  Number(req.params.id);
+
+  let data =
+  JSON.parse(
+    fs.readFileSync(FILE)
+  );
+
+  data =
+  data.map(a=>{
+
+    if(a.id === id){
+      return {
+        ...a,
+        ...req.body
+      };
+    }
+
+    return a;
+
+  });
+
+  fs.writeFileSync(
+    FILE,
+    JSON.stringify(data,null,2)
+  );
+
+  res.json({
+    success:true
+  });
+
+});
+
+app.listen(3000,()=>{
+  console.log("API aktif");
 });
